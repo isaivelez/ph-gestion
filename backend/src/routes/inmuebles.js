@@ -11,7 +11,7 @@ router.get("/", async (req, res) => {
   const condominioId = condominioDeLaPeticion(req);
   const page = Number(req.query.page || 1);
   const limit = Number(req.query.limit || 10);
-  const offset = page * limit;
+  const offset = (page - 1) * limit;
 
   const { rows } = await query(
     `SELECT i.id, i.identificacion, i.torre, i.piso, i.tipo, i.area,
@@ -20,12 +20,16 @@ router.get("/", async (req, res) => {
        FROM inmueble i
        LEFT JOIN persona p ON p.id = i.propietario_id
        LEFT JOIN persona r ON r.id = i.residente_id
+      WHERE i.condominio_id = $1
       ORDER BY i.id
-      LIMIT $1 OFFSET $2`,
-    [limit, offset]
+      LIMIT $2 OFFSET $3`,
+    [condominioId, limit, offset],
   );
 
-  const total = await query("SELECT COUNT(*)::int AS n FROM inmueble WHERE condominio_id = $1", [condominioId]);
+  const total = await query(
+    "SELECT COUNT(*)::int AS n FROM inmueble WHERE condominio_id = $1",
+    [condominioId],
+  );
   res.json({ page, limit, total: total.rows[0].n, inmuebles: rows });
 });
 
@@ -38,9 +42,10 @@ router.get("/:id", async (req, res) => {
        LEFT JOIN persona p ON p.id = i.propietario_id
        LEFT JOIN persona r ON r.id = i.residente_id
       WHERE i.id = $1 AND i.condominio_id = $2`,
-    [req.params.id, condominioId]
+    [req.params.id, condominioId],
   );
-  if (!rows[0]) return res.status(404).json({ error: "Inmueble no encontrado" });
+  if (!rows[0])
+    return res.status(404).json({ error: "Inmueble no encontrado" });
   res.json(rows[0]);
 });
 
@@ -52,9 +57,10 @@ router.get("/:id/estado-cuenta", async (req, res) => {
     `SELECT i.*, c.tasa_mora_mensual, c.dias_gracia
        FROM inmueble i JOIN condominio c ON c.id = i.condominio_id
       WHERE i.id = $1`,
-    [inmuebleId]
+    [inmuebleId],
   );
-  if (!inm.rows[0]) return res.status(404).json({ error: "Inmueble no encontrado" });
+  if (!inm.rows[0])
+    return res.status(404).json({ error: "Inmueble no encontrado" });
   const tasa = inm.rows[0].tasa_mora_mensual;
 
   const { rows } = await query(
@@ -62,7 +68,7 @@ router.get("/:id/estado-cuenta", async (req, res) => {
        FROM factura
       WHERE inmueble_id = $1 AND estado <> 'Anulada'
       ORDER BY fecha_vencimiento`,
-    [inmuebleId]
+    [inmuebleId],
   );
 
   const hoy = new Date();
@@ -73,11 +79,18 @@ router.get("/:id/estado-cuenta", async (req, res) => {
     const interes = calcularInteresMora(f.saldo, diasMora, tasa);
     totalSaldo += Number(f.saldo);
     totalInteres += interes;
-    return { ...f, dias_mora: diasMora > 0 ? diasMora : 0, interes_mora: interes };
+    return {
+      ...f,
+      dias_mora: diasMora > 0 ? diasMora : 0,
+      interes_mora: interes,
+    };
   });
 
   res.json({
-    inmueble: { id: inm.rows[0].id, identificacion: inm.rows[0].identificacion },
+    inmueble: {
+      id: inm.rows[0].id,
+      identificacion: inm.rows[0].identificacion,
+    },
     facturas,
     total_saldo: totalSaldo,
     total_interes: totalInteres,
