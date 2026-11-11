@@ -1,0 +1,13 @@
+# Se aplica automáticamente con `docker compose up` (modo desarrollo, hot reload).
+# Se montan solo los archivos de código; node_modules queda dentro de la imagen.
+services:
+  api:
+    command: ["npm", "run", "dev"]
+    volumes:
+      - ./backend/src:/app/src
+
+  web:
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/index.html:/app/index.html
+      - ./frontend/vite.config.js:/app/vite.config.js
