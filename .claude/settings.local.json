@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit -q -m 'Commit inicial *)",
+      "Bash(git remote *)",
+      "Bash(git push *)",
+      "Bash(docker --version)",
+      "Bash(docker info *)",
+      "Bash(command -v psql)",
+      "Bash(docker compose *)"
+    ]
+  }
+}
