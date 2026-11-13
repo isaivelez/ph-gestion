@@ -5,7 +5,7 @@
   "type": "module",
   "main": "src/index.js",
   "scripts": {
-    "test": "node --test test/",
+    "test": "node --test",
     "start": "node src/index.js",
     "dev": "node --watch src/index.js"
   },

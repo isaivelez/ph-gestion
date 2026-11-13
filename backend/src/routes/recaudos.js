@@ -135,6 +135,29 @@ router.post("/:id/anular", requireRol("admin_copropiedad", "contador", "superadm
       return res.status(404).json({ error: "Recaudo no encontrado o ya anulado" });
     }
 
+    //devolver a cada factura el valor que le había sido aplicado y recalcualar el estado
+    const aplicaciones = await client.query(
+      `SELECT factura_id, SUM(valor_aplicado) AS valor_aplicado
+         FROM pago_aplicacion
+        WHERE pago_id = $1
+        GROUP BY factura_id`,
+      [req.params.id]
+    );
+
+    for (const a of aplicaciones.rows) {
+      const upd = await client.query(
+        `UPDATE factura
+            SET saldo = saldo + $1
+          WHERE id = $2
+          RETURNING total, saldo, estado`,
+        [a.valor_aplicado, a.factura_id]
+      );
+      const f = upd.rows[0];
+      if (!f) continue;
+      const nuevoEstado = estadoPorSaldo(f.total, f.saldo, f.estado);
+      await client.query("UPDATE factura SET estado = $1 WHERE id = $2", [nuevoEstado, a.factura_id]);
+    }
+
     await client.query("DELETE FROM pago_aplicacion WHERE pago_id = $1", [req.params.id]);
     await client.query("UPDATE pago SET anulado = TRUE WHERE id = $1", [req.params.id]);
 
