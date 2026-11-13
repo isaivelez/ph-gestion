@@ -62,6 +62,7 @@ router.get("/:id/estado-cuenta", async (req, res) => {
   if (!inm.rows[0])
     return res.status(404).json({ error: "Inmueble no encontrado" });
   const tasa = inm.rows[0].tasa_mora_mensual;
+  const diasGracia = inm.rows[0].dias_gracia;
 
   const { rows } = await query(
     `SELECT id, periodo, fecha_emision, fecha_vencimiento, total, saldo, estado
@@ -76,7 +77,7 @@ router.get("/:id/estado-cuenta", async (req, res) => {
   let totalInteres = 0;
   const facturas = rows.map((f) => {
     const diasMora = diasEntre(f.fecha_vencimiento, hoy);
-    const interes = calcularInteresMora(f.saldo, diasMora, tasa);
+    const interes = calcularInteresMora(f.saldo, diasMora, tasa, diasGracia);
     totalSaldo += Number(f.saldo);
     totalInteres += interes;
     return {

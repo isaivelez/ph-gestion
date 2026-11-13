@@ -10,19 +10,23 @@ export function diasEntre(desde, hasta) {
 
 // Interés de mora sobre un saldo vencido.
 // tasaMensual viene de la copropiedad (ej. 0.02 = 2% mensual).
-export function calcularInteresMora(saldo, diasMora, tasaMensual) {
+// Dentro de los días de gracia no hay interés; fuera, la tasa mensual se
+// prorratea por días (días / 30).
+export function calcularInteresMora(saldo, diasMora, tasaMensual, diasGracia = 0) {
   const s = Number(saldo);
   const t = Number(tasaMensual);
-  if (diasMora <= 0 || s <= 0) return 0;
-  const interes = s * t * diasMora;
+  const g = Number(diasGracia) || 0;
+  if (diasMora <= 0 || diasMora <= g || s <= 0) return 0;
+  const interes = s * t * (diasMora / 30);
   return Math.round(interes);
 }
 
 // Determina el estado de una factura a partir de su saldo.
 export function estadoPorSaldo(total, saldo, estadoActual) {
   if (estadoActual === "Anulada") return "Anulada";
-  const s = Number(saldo);
+  // pg devuelve NUMERIC como texto ("0.00"); comparar como números.
   const t = Number(total);
+  const s = Number(saldo);
   if (s <= 0) return "Pagada";
   if (s < t) return "Parcialmente pagada";
   return "Pendiente";
