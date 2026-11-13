@@ -21,8 +21,10 @@ export function calcularInteresMora(saldo, diasMora, tasaMensual) {
 // Determina el estado de una factura a partir de su saldo.
 export function estadoPorSaldo(total, saldo, estadoActual) {
   if (estadoActual === "Anulada") return "Anulada";
-  if (saldo === 0) return "Pagada";
-  if (saldo < total) return "Parcialmente pagada";
+  const s = Number(saldo);
+  const t = Number(total);
+  if (s <= 0) return "Pagada";
+  if (s < t) return "Parcialmente pagada";
   return "Pendiente";
 }
 
