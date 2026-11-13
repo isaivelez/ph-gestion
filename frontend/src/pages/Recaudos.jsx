@@ -3,7 +3,7 @@ import { api, money } from "../api.js";
 
 export default function Recaudos() {
   const [recaudos, setRecaudos] = useState([]);
-  const [inmuebleId, setInmuebleId] = useState("");
+  const [identificacion, setIdentificacion] = useState("");
   const [valor, setValor] = useState("");
   const [medio, setMedio] = useState("Transferencia");
   const [msg, setMsg] = useState("");
@@ -20,7 +20,7 @@ export default function Recaudos() {
     try {
       const r = await api("/api/recaudos", {
         method: "POST",
-        body: JSON.stringify({ inmueble_id: Number(inmuebleId), valor: Number(valor), medio }),
+        body: JSON.stringify({ identificacion: identificacion.trim(), valor: Number(valor), medio }),
       });
       setMsg(`Recaudo registrado. Aplicado a ${r.aplicaciones.length} factura(s). No aplicado: ${money(r.no_aplicado)}`);
       setValor("");
@@ -41,7 +41,7 @@ export default function Recaudos() {
       <div className="panel">
         <h3>Registrar recaudo</h3>
         <form className="row" onSubmit={registrar}>
-          <div className="field"><label>ID inmueble</label><input value={inmuebleId} onChange={(e) => setInmuebleId(e.target.value)} placeholder="ej. 4" /></div>
+          <div className="field"><label>Inmueble</label><input value={identificacion} onChange={(e) => setIdentificacion(e.target.value)} placeholder="ej. 202" /></div>
           <div className="field"><label>Valor</label><input value={valor} onChange={(e) => setValor(e.target.value)} placeholder="ej. 250000" /></div>
           <div className="field"><label>Medio</label>
             <select value={medio} onChange={(e) => setMedio(e.target.value)}>

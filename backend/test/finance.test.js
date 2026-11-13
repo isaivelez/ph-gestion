@@ -81,3 +81,30 @@ describe("estaEnMora", () => {
     assert.equal(estaEnMora("2026-12-10", new Date("2026-11-10")), false);
   });
 });
+
+import { estadoPorSaldo } from "../src/lib/finance.js";
+test("estadoPorSaldo compara numéricamente valores en texto", () => {
+  assert.equal(estadoPorSaldo("250000.00", "0.00", "Pendiente"), "Pagada");
+  assert.equal(estadoPorSaldo("250000.00", "50000.00", "Pendiente"), "Parcialmente pagada");
+  assert.equal(estadoPorSaldo("250000.00", "250000.00", "Pendiente"), "Pendiente");
+  assert.equal(estadoPorSaldo("250000.00", "0.00", "Anulada"), "Anulada");
+});
+
+import { diasEntre, estaEnMora } from "../src/lib/finance.js";
+test("estadoPorSaldo: pago total exacto y saldo negativo es Pagada", () => {
+  assert.equal(estadoPorSaldo("250000.00", "0", "Pendiente"), "Pagada");
+  assert.equal(estadoPorSaldo(250000, 0, "Parcialmente pagada"), "Pagada");
+});
+test("calcularInteresMora acepta tasa y saldo como texto (pg NUMERIC)", () => {
+  assert.equal(calcularInteresMora("250000.00", 92, "0.0200", 5), 15333);
+});
+test("calcularInteresMora sin gracia prorratea 30 días = 1 mes", () => {
+  assert.equal(calcularInteresMora(100000, 30, 0.02), 2000);
+});
+test("diasEntre cuenta días calendario", () => {
+  assert.equal(diasEntre("2026-08-10", "2026-08-13"), 3);
+});
+test("estaEnMora compara contra la fecha dada", () => {
+  assert.equal(estaEnMora("2026-08-10", new Date("2026-08-11")), true);
+  assert.equal(estaEnMora("2026-08-10", new Date("2026-08-09")), false);
+});
