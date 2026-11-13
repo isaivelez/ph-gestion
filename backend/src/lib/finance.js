@@ -24,8 +24,11 @@ export function calcularInteresMora(saldo, diasMora, tasaMensual, diasGracia = 0
 // Determina el estado de una factura a partir de su saldo.
 export function estadoPorSaldo(total, saldo, estadoActual) {
   if (estadoActual === "Anulada") return "Anulada";
-  if (saldo === 0) return "Pagada";
-  if (saldo < total) return "Parcialmente pagada";
+  // PostgreSQL devuelve NUMERIC como texto; comparar numéricamente.
+  const saldoNum = Number(saldo);
+  const totalNum = Number(total);
+  if (saldoNum <= 0) return "Pagada";
+  if (saldoNum < totalNum) return "Parcialmente pagada";
   return "Pendiente";
 }
 

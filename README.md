@@ -68,6 +68,28 @@ docker compose down -v && docker compose up --build
    npm run dev              # http://localhost:5173
    ```
 
+## Pruebas
+
+Se usa el runner nativo de Node (`node:test`):
+
+```bash
+cd backend
+npm test
+```
+
+- `test/finance.test.js`: unitarias de cálculo de mora y estado de facturas.
+- `test/recaudos.test.js`: integración contra PostgreSQL. Crea una base de datos
+  temporal con `db/schema.sql` y `db/seed.sql`, ejecuta el flujo real de la API
+  (login, registro del recaudo y estado de cuenta) y elimina la base al terminar.
+  Requiere un PostgreSQL accesible vía `DATABASE_URL` o los valores por defecto
+  del compose; si no lo encuentra, estas pruebas se omiten.
+
+Con Docker:
+
+```bash
+docker compose exec api npm test
+```
+
 ## Usuarios de prueba
 
 Clave para todos los usuarios: **`Examen2026*`**
