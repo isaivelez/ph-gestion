@@ -40,10 +40,31 @@ router.get("/derrame", async (req, res) => {
 // Registrar un recaudo y aplicarlo (derrame) sobre las facturas pendientes del inmueble.
 router.post("/", requireRol("admin_copropiedad", "contador", "superadmin"), async (req, res) => {
   const condominioId = condominioDeLaPeticion(req);
-  const { inmueble_id, fecha, medio, valor } = req.body || {};
-  if (!inmueble_id || !valor) {
-    return res.status(400).json({ error: "inmueble_id y valor son obligatorios" });
+  const { inmueble_id, identificacion, fecha, medio, valor } = req.body || {};
+  const ident = identificacion != null ? String(identificacion).trim() : "";
+  if ((!ident && !inmueble_id) || !valor) {
+    return res.status(400).json({ error: "identificacion (o inmueble_id) y valor son obligatorios" });
   }
+  if (!(Number(valor) > 0)) {
+    return res.status(400).json({ error: "valor debe ser mayor a 0" });
+  }
+
+  // Se resuelve por identificación (ej. "202") dentro de la copropiedad; inmueble_id queda por compatibilidad.
+  const existe = ident
+    ? await query(
+        "SELECT id FROM inmueble WHERE identificacion = $1 AND condominio_id = $2",
+        [ident, condominioId]
+      )
+    : await query(
+        "SELECT id FROM inmueble WHERE id = $1 AND condominio_id = $2",
+        [Number(inmueble_id) || 0, condominioId]
+      );
+  if (!existe.rows[0]) {
+    return res.status(404).json({
+      error: `No existe el inmueble "${ident || inmueble_id}" en esta copropiedad`,
+    });
+  }
+  const inmuebleIdNum = existe.rows[0].id;
 
   const client = await pool.connect();
   try {
@@ -53,7 +74,7 @@ router.post("/", requireRol("admin_copropiedad", "contador", "superadmin"), asyn
       `INSERT INTO pago (condominio_id, inmueble_id, fecha, medio, valor)
        VALUES ($1, $2, COALESCE($3, CURRENT_DATE), COALESCE($4,'Transferencia'), $5)
        RETURNING id`,
-      [condominioId, inmueble_id, fecha || null, medio || null, valor]
+      [condominioId, inmuebleIdNum, fecha || null, medio || null, valor]
     );
     const pagoId = pago.rows[0].id;
 
@@ -62,7 +83,7 @@ router.post("/", requireRol("admin_copropiedad", "contador", "superadmin"), asyn
          FROM factura
         WHERE inmueble_id = $1 AND saldo > 0 AND estado <> 'Anulada'
         ORDER BY fecha_vencimiento DESC`,
-      [inmueble_id]
+      [inmuebleIdNum]
     );
 
     let restante = Number(valor);
