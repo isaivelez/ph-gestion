@@ -5,6 +5,8 @@ services:
     command: ["npm", "run", "dev"]
     volumes:
       - ./backend/src:/app/src
+      - ./backend/test:/app/test
+      - ./db:/app/db:ro
 
   web:
     volumes:

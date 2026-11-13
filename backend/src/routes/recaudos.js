@@ -78,11 +78,12 @@ router.post("/", requireRol("admin_copropiedad", "contador", "superadmin"), asyn
     );
     const pagoId = pago.rows[0].id;
 
+    // Derrame: se abona primero la deuda más antigua (vencimiento ascendente).
     const facturas = await client.query(
       `SELECT id, total, saldo, estado
          FROM factura
         WHERE inmueble_id = $1 AND saldo > 0 AND estado <> 'Anulada'
-        ORDER BY fecha_vencimiento DESC`,
+        ORDER BY fecha_vencimiento ASC, id ASC`,
       [inmuebleIdNum]
     );
 
